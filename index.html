@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinic Registration</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+    #message { font-size: 1.2em; }
+  </style>
+</head>
+<body>
+
+  <h2 id="message">กำลังลงทะเบียน...</h2>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+    async function main() {
+      // 2. ตั้งค่า LIFF ID และ Webhook URL ของคุณที่นี่
+      const LIFF_ID = "YOUR_LIFF_ID_HERE"; // <--- แก้ไขตรงนี้
+      const N8N_WEBHOOK_URL = "YOUR_N8N_WEBHOOK_URL_HERE"; // <--- แก้ไขตรงนี้
+
+      try {
+        // 3. Initialize LIFF
+        document.getElementById('message').innerText = "กำลังเริ่มต้น...";
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          document.getElementById('message').innerText = "กรุณาเข้าสู่ระบบ...";
+          liff.login();
+          return; // Stop further execution until user logs in
+        }
+
+        // 4. Get user profile
+        document.getElementById('message').innerText = "กำลังดึงข้อมูลโปรไฟล์...";
+        const profile = await liff.getProfile();
+        
+        const userData = {
+          userId: profile.userId,
+          displayName: profile.displayName
+        };
+
+        // 5. Send data to n8n Webhook
+        document.getElementById('message').innerText = "กำลังส่งข้อมูล...";
+        const response = await fetch(N8N_WEBHOOK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+
+        if (!response.ok) {
+           throw new Error('ไม่สามารถส่งข้อมูลไปที่เซิฟเวอร์ได้');
+        }
+
+        // 6. Show success and close LIFF
+        document.getElementById('message').innerText = "ลงทะเบียนสำเร็จ! กรุณากลับไปที่หน้าแชท";
+        setTimeout(() => {
+          liff.closeWindow();
+        }, 2000); // Close after 2 seconds
+
+      } catch (error) {
+        console.error(error);
+        document.getElementById('message').innerText = "เกิดข้อผิดพลาด: " + error.message;
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
